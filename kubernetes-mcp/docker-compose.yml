@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  kubernetes-mcp-server:
+    image: kubernetes-mcp-server:v1
+    container_name: kubernetes-mcp-server
+    ports:
+      - "8081:8081"
+    environment:
+      - K8S_KUBECONFIG_PATH=/app/kubeconfig
+      - K8S_NAMESPACE=default
+      - MCP_DEBUG=true
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=8081
+    volumes:
+      # 挂载kubeconfig文件
+      - /etc/rancher/k3s/k3s.yaml:/app/kubeconfig:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - "mcp.server=true"
+      - "mcp.protocol=sse" 
