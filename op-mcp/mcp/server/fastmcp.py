@@ -3,6 +3,9 @@ from fastapi import APIRouter, Request
 from sse_starlette.sse import EventSourceResponse
 from functools import wraps
 import inspect
+import logging
+
+logger = logging.getLogger("mcp_server")
 
 class FastMCP:
     def __init__(self, name="FastMCP Server"):
@@ -14,10 +17,8 @@ class FastMCP:
     def tool(self):
         def decorator(func):
             self.tools[func.__name__] = func
-            @wraps(func)
-            async def wrapper(*args, **kwargs):
-                return await func(*args, **kwargs) if asyncio.iscoroutinefunction(func) else func(*args, **kwargs)
-            return wrapper
+            logger.info(f"工具註冊: {func.__name__}")
+            return func  # 返回原始函數，避免wrapper導致inspect失效
         return decorator
 
     def _register_routes(self):
