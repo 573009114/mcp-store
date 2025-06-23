@@ -7,7 +7,7 @@ import uvicorn
 import sqlite3
 import os
 from mycmcp.cmdb.models import Host, Account
-from mycmcp.cmdb.crud import create_host_with_account as crud_create_host_with_account, get_hosts, get_accounts
+from mycmcp.cmdb.crud import create_host_with_account as crud_create_host_with_account, get_hosts, get_accounts, get_session
 import paramiko
 from mycmcp.cmdb.database import init_db
 
@@ -152,6 +152,33 @@ def remote_exec(host_id: int, command: str) -> dict:
         return {"stdout": result, "stderr": err}
     except Exception as e:
         return {"error": str(e)}
+
+@mcp.tool()
+def fix_account_host_link() -> dict:
+    hosts = get_hosts()
+    accounts = get_accounts()
+    fixed = 0
+    if len(hosts) == 1:
+        host_id = hosts[0].id
+        for a in accounts:
+            if not a.host_id:
+                a.host_id = host_id
+                a.save() if hasattr(a, 'save') else None
+                fixed += 1
+    else:
+        # 多主机时可按用户名/主机名等策略补充
+        pass
+    return {"fixed": fixed, "total_accounts": len(accounts)}
+
+@mcp.tool()
+def delete_host(host_id: int) -> dict:
+    with get_session() as session:
+        # 删除关联账号
+        session.query(Account).filter(Account.host_id == host_id).delete()
+        # 删除主机
+        deleted = session.query(Host).filter(Host.id == host_id).delete()
+        session.commit()
+    return {"deleted": deleted}
 
 # FastAPI主应用
 app = FastAPI(title="Linux MCP Server", version="1.0.0")

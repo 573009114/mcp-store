@@ -1,6 +1,9 @@
 from sqlmodel import SQLModel, create_engine, Session
+import os
 
-DATABASE_URL = "sqlite:///./cmdb.db"
+DB_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'db')
+os.makedirs(DB_DIR, exist_ok=True)
+DATABASE_URL = f"sqlite:///{os.path.join(DB_DIR, 'cmdb.db')}"
 engine = create_engine(DATABASE_URL, echo=True)
 
 def init_db():
