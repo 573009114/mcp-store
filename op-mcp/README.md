@@ -1,4 +1,4 @@
-# Linux MCP Server（工具化重构版）
+# Linux MCP Server
 
 ## 项目简介
 本项目是基于 FastAPI + FastMCP 的 Linux 运维自动化平台核心模块。所有运维能力均以 MCP 工具（@mcp.tool 装饰器）方式暴露，支持通过 MCP 协议和 HTTP API 实现主机控制、资源管理和自动化运维。
