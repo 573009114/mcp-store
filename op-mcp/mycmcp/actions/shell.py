@@ -1,21 +1,19 @@
 from fastmcp.actions import BaseAction
 import subprocess
-from mcp.cmdb import crud, models
+from mycmcp.cmdb import crud, models
 from datetime import datetime
 
-class LogAction(BaseAction):
-    name = "logs"
-    description = "日志片段拉取"
+class ShellAction(BaseAction):
+    name = "shell"
+    description = "执行任意shell命令"
 
     async def handle(self, intent):
-        path = intent.data.get("path")
-        lines = intent.data.get("lines", 50)
+        command = intent.data.get("command")
         operator = intent.data.get("operator", "system")
-        if not path:
-            return {"error": "path参数必填"}
-        cmd = f"tail -n {lines} {path}"
+        if not command:
+            return {"error": "No command provided"}
         try:
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)
+            result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=30)
             output = {
                 "stdout": result.stdout,
                 "stderr": result.stderr,
@@ -23,9 +21,10 @@ class LogAction(BaseAction):
             }
         except Exception as e:
             output = {"error": str(e)}
+        # 记录操作日志
         log = models.OperationLog(
-            action="logs",
-            detail=f"cmd: {cmd}, result: {output}",
+            action="shell",
+            detail=f"command: {command}, result: {output}",
             operator=operator,
             created_at=datetime.utcnow()
         )

@@ -1,6 +1,6 @@
 from fastmcp.actions import BaseAction
 import subprocess
-from mcp.cmdb import crud, models
+from mycmcp.cmdb import crud, models
 from datetime import datetime
 
 class ProcessAction(BaseAction):

@@ -44,4 +44,15 @@ def create_operation_log(log: OperationLog):
 
 def get_operation_logs():
     with get_session() as session:
-        return session.exec(select(OperationLog)).all() 
+        return session.exec(select(OperationLog)).all()
+
+def create_host_with_account(host: Host, account: Account):
+    with get_session() as session:
+        session.add(host)
+        session.commit()
+        session.refresh(host)
+        account.host_id = host.id
+        session.add(account)
+        session.commit()
+        session.refresh(account)
+        return {"id": host.id}, {"id": account.id} 

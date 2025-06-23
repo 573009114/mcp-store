@@ -1,25 +1,19 @@
 from fastmcp.actions import BaseAction
 import subprocess
-from mcp.cmdb import crud, models
+from mycmcp.cmdb import crud, models
 from datetime import datetime
 
-class SysInfoAction(BaseAction):
-    name = "sysinfo"
-    description = "系统信息查询"
+class LogAction(BaseAction):
+    name = "logs"
+    description = "日志片段拉取"
 
     async def handle(self, intent):
-        info_type = intent.data.get("type")  # mem/disk/load/net
+        path = intent.data.get("path")
+        lines = intent.data.get("lines", 50)
         operator = intent.data.get("operator", "system")
-        if info_type == "mem":
-            cmd = "free -h"
-        elif info_type == "disk":
-            cmd = "df -h"
-        elif info_type == "load":
-            cmd = "uptime"
-        elif info_type == "net":
-            cmd = "ifconfig || ip addr"
-        else:
-            return {"error": "type参数必须为mem/disk/load/net"}
+        if not path:
+            return {"error": "path参数必填"}
+        cmd = f"tail -n {lines} {path}"
         try:
             result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)
             output = {
@@ -30,7 +24,7 @@ class SysInfoAction(BaseAction):
         except Exception as e:
             output = {"error": str(e)}
         log = models.OperationLog(
-            action="sysinfo",
+            action="logs",
             detail=f"cmd: {cmd}, result: {output}",
             operator=operator,
             created_at=datetime.utcnow()

@@ -1,9 +1,9 @@
 from fastmcp.server import FastMCPServer
-from mcp.actions.shell import ShellAction
-from mcp.actions.systemd import SystemdAction
-from mcp.actions.logs import LogAction
-from mcp.actions.process import ProcessAction
-from mcp.actions.sysinfo import SysInfoAction
+from mycmcp.actions.shell import ShellAction
+from mycmcp.actions.systemd import SystemdAction
+from mycmcp.actions.logs import LogAction
+from mycmcp.actions.process import ProcessAction
+from mycmcp.actions.sysinfo import SysInfoAction
 
 app = FastMCPServer()
 

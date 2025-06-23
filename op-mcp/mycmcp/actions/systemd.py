@@ -1,19 +1,21 @@
 from fastmcp.actions import BaseAction
 import subprocess
-from mcp.cmdb import crud, models
+from mycmcp.cmdb import crud, models
 from datetime import datetime
 
-class ShellAction(BaseAction):
-    name = "shell"
-    description = "执行任意shell命令"
+class SystemdAction(BaseAction):
+    name = "systemd"
+    description = "systemd服务管理"
 
     async def handle(self, intent):
-        command = intent.data.get("command")
+        action = intent.data.get("action")  # start/stop/restart/status
+        service = intent.data.get("service")
         operator = intent.data.get("operator", "system")
-        if not command:
-            return {"error": "No command provided"}
+        if not action or not service:
+            return {"error": "action和service参数必填"}
+        cmd = f"systemctl {action} {service}"
         try:
-            result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=30)
+            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=20)
             output = {
                 "stdout": result.stdout,
                 "stderr": result.stderr,
@@ -21,10 +23,9 @@ class ShellAction(BaseAction):
             }
         except Exception as e:
             output = {"error": str(e)}
-        # 记录操作日志
         log = models.OperationLog(
-            action="shell",
-            detail=f"command: {command}, result: {output}",
+            action="systemd",
+            detail=f"cmd: {cmd}, result: {output}",
             operator=operator,
             created_at=datetime.utcnow()
         )

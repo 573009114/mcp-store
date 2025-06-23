@@ -8,4 +8,6 @@ def init_db():
     SQLModel.metadata.create_all(engine)
 
 def get_session():
-    return Session(engine) 
+    return Session(engine)
+
+init_db()  # 必须在全局作用域，保证无论如何都执行 

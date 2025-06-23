@@ -6,6 +6,10 @@ from fastapi.responses import JSONResponse
 import uvicorn
 import sqlite3
 import os
+from mycmcp.cmdb.models import Host, Account
+from mycmcp.cmdb.crud import create_host_with_account as crud_create_host_with_account, get_hosts, get_accounts
+import paramiko
+from mycmcp.cmdb.database import init_db
 
 # MCP工具化服务器
 mcp = FastMCP("Linux MCP Server")
@@ -110,12 +114,44 @@ def create_host(hostname: str, ip: str, os: str, group: str = None) -> dict:
 
 @mcp.tool()
 def list_hosts() -> list:
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute('CREATE TABLE IF NOT EXISTS hosts (id INTEGER PRIMARY KEY, hostname TEXT, ip TEXT, os TEXT, groupname TEXT)')
-    rows = c.execute('SELECT id, hostname, ip, os, groupname FROM hosts').fetchall()
-    conn.close()
-    return [{"id": r[0], "hostname": r[1], "ip": r[2], "os": r[3], "group": r[4]} for r in rows]
+    hosts = get_hosts()
+    return [
+        {
+            "id": h.id,
+            "hostname": h.hostname,
+            "ip": h.ip,
+            "os": h.os,
+            "group": h.group
+        }
+        for h in hosts
+    ]
+
+@mcp.tool("create_host_with_account")
+def create_host_with_account_tool(hostname: str, ip: str, os: str, group: str, username: str, password: str) -> dict:
+    host = Host(hostname=hostname, ip=ip, os=os, group=group)
+    account = Account(username=username, password=password)
+    h, a = crud_create_host_with_account(host, account)
+    return {"msg": "ok", "host_id": h['id'], "account_id": a['id']}
+
+@mcp.tool()
+def remote_exec(host_id: int, command: str) -> dict:
+    hosts = get_hosts()
+    accounts = get_accounts()
+    host = next((h for h in hosts if h.id == host_id), None)
+    account = next((a for a in accounts if a.host_id == host_id), None)
+    if not host or not account:
+        return {"error": "未找到主机或账号"}
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    try:
+        ssh.connect(host.ip, username=account.username, password=account.password)
+        stdin, stdout, stderr = ssh.exec_command(command)
+        result = stdout.read().decode()
+        err = stderr.read().decode()
+        ssh.close()
+        return {"stdout": result, "stderr": err}
+    except Exception as e:
+        return {"error": str(e)}
 
 # FastAPI主应用
 app = FastAPI(title="Linux MCP Server", version="1.0.0")
@@ -137,4 +173,5 @@ async def health():
     return {"status": "healthy"}
 
 if __name__ == "__main__":
+    init_db()  # 自动初始化数据库表结构，已存在则不会重复创建
     uvicorn.run(app, host="0.0.0.0", port=8000) 

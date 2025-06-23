@@ -3,3 +3,4 @@ fastmcp
 uvicorn
 sqlmodel
 pydantic 
+paramiko

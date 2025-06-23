@@ -1,21 +1,27 @@
 from fastmcp.actions import BaseAction
 import subprocess
-from mcp.cmdb import crud, models
+from mycmcp.cmdb import crud, models
 from datetime import datetime
 
-class SystemdAction(BaseAction):
-    name = "systemd"
-    description = "systemd服务管理"
+class SysInfoAction(BaseAction):
+    name = "sysinfo"
+    description = "系统信息查询"
 
     async def handle(self, intent):
-        action = intent.data.get("action")  # start/stop/restart/status
-        service = intent.data.get("service")
+        info_type = intent.data.get("type")  # mem/disk/load/net
         operator = intent.data.get("operator", "system")
-        if not action or not service:
-            return {"error": "action和service参数必填"}
-        cmd = f"systemctl {action} {service}"
+        if info_type == "mem":
+            cmd = "free -h"
+        elif info_type == "disk":
+            cmd = "df -h"
+        elif info_type == "load":
+            cmd = "uptime"
+        elif info_type == "net":
+            cmd = "ifconfig || ip addr"
+        else:
+            return {"error": "type参数必须为mem/disk/load/net"}
         try:
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=20)
+            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)
             output = {
                 "stdout": result.stdout,
                 "stderr": result.stderr,
@@ -24,7 +30,7 @@ class SystemdAction(BaseAction):
         except Exception as e:
             output = {"error": str(e)}
         log = models.OperationLog(
-            action="systemd",
+            action="sysinfo",
             detail=f"cmd: {cmd}, result: {output}",
             operator=operator,
             created_at=datetime.utcnow()
