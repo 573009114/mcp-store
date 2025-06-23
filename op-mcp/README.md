@@ -1,13 +1,14 @@
 # Linux MCP Server
 
 ## 项目简介
-本项目是基于 FastAPI + FastMCP 的 Linux 运维自动化平台核心模块。所有运维能力均以 MCP 工具（@mcp.tool 装饰器）方式暴露，支持通过 MCP 协议和 HTTP API 实现主机控制、资源管理和自动化运维。
+本项目是基于 FastAPI + FastMCP + SQLModel ORM 的 Linux 运维自动化平台核心模块。所有运维能力均以 MCP 工具（@mcp.tool 装饰器）方式暴露，支持通过 MCP 协议和 HTTP API 实现主机控制、资源管理和自动化运维。
 
 ## 主要特性
-- 所有运维能力（shell、systemd、日志、进程、系统信息、CMDB）均以工具形式暴露
+- 所有运维能力（shell、systemd、日志、进程、系统信息、CMDB、远程命令、硬件信息）均以工具形式暴露
 - 支持 SSE/MCP 协议与 Cursor/Agent 等客户端集成
 - FastAPI 提供健康检查与基础 HTTP 路由
-- 结构极简，易于扩展和二次开发
+- 结构极简，ORM一体化主机/账号管理，易于扩展和二次开发
+- Dockerfile 已适配国内apt源和常用命令工具，构建更快更方便
 
 ## 快速启动
 
@@ -24,6 +25,8 @@ uvicorn server:app --host 0.0.0.0 --port 8000
 ./deploy.sh build
 ./deploy.sh start
 ```
+
+> Dockerfile 已自动适配国内阿里云apt源，并预装常用Linux命令（procps、iproute2、net-tools、curl、vim、less、psmisc、lsof、tree等），适合国内环境。
 
 ## API 用法
 
@@ -47,17 +50,20 @@ uvicorn server:app --host 0.0.0.0 --port 8000
 - `logs(path, lines=50)`        拉取日志片段
 - `process(op, pid=None)`       进程管理（op=list/kill）
 - `sysinfo(info_type)`          系统信息（mem/disk/load/net）
-- `create_host(...)`            新增主机（CMDB）
-- `list_hosts()`                查询主机列表（CMDB）
+- `create_host_with_account(...)` 一体化注册主机+账号+密码（推荐）
+- `list_hosts()`                查询主机列表（ORM方式，推荐）
+- `remote_exec(host_id, command)` 远程执行命令（自动查找账号密码，支持多主机）
 
 ## CMDB 说明
-- 内置 sqlite3 数据库，文件为 `cmdb.db`
-- 支持主机信息的增删查
+- 基于 SQLModel ORM，主机（Host）和账号（Account）分表存储，支持主机与账号一体化注册和管理
+- 内置 sqlite3 数据库，文件为 `cmdb.db`，自动初始化，无需手动建表
+- 支持主机信息的增删查，账号密码与主机关联，便于远程自动化运维
 - 可按需扩展更多资源类型
 
 ## 扩展方式
 - 直接在 `server.py` 内新增 `@mcp.tool()` 装饰器函数即可扩展新运维能力
 - 支持同步和异步函数
+- 推荐所有CMDB相关操作均用ORM实现，便于统一管理
 
 ## 许可证
 MIT
@@ -65,11 +71,11 @@ MIT
 ## 目录结构
 ```
 op-mcp/
-├── Dockerfile        # 服务端容器化部署
+├── Dockerfile        # 服务端容器化部署（已适配国内源和常用命令）
 ├── deploy.sh         # 一键构建/启动/停止脚本
 ├── server.py         # fastmcp 服务端入口（可选/可自定义）
-├── agent_main.py     # MCP Agent 示例
-├── requirements.txt  # agent 端依赖
+├── mycmcp/           # ORM模型、CMDB、业务逻辑
+├── requirements.txt  # 依赖
 └── README.md
 ```
 
@@ -112,4 +118,5 @@ def hello(name: str) -> str:
 
 ## 其他说明
 - 服务端所有API、工具、资源均可通过自定义 server.py 进行扩展，详见 fastmcp 官方文档：https://github.com/jlowin/fastmcp
+- mycmcp/ 目录为自定义ORM模型和CMDB逻辑，推荐所有主机/账号/操作等均用ORM统一管理。
 - agent_main.py 可根据实际需求扩展。 
