@@ -3,19 +3,19 @@ import subprocess
 from mcp.cmdb import crud, models
 from datetime import datetime
 
-class LogAction(BaseAction):
-    name = "logs"
-    description = "日志片段拉取"
+class SystemdAction(BaseAction):
+    name = "systemd"
+    description = "systemd服务管理"
 
     async def handle(self, intent):
-        path = intent.data.get("path")
-        lines = intent.data.get("lines", 50)
+        action = intent.data.get("action")  # start/stop/restart/status
+        service = intent.data.get("service")
         operator = intent.data.get("operator", "system")
-        if not path:
-            return {"error": "path参数必填"}
-        cmd = f"tail -n {lines} {path}"
+        if not action or not service:
+            return {"error": "action和service参数必填"}
+        cmd = f"systemctl {action} {service}"
         try:
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)
+            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=20)
             output = {
                 "stdout": result.stdout,
                 "stderr": result.stderr,
@@ -24,7 +24,7 @@ class LogAction(BaseAction):
         except Exception as e:
             output = {"error": str(e)}
         log = models.OperationLog(
-            action="logs",
+            action="systemd",
             detail=f"cmd: {cmd}, result: {output}",
             operator=operator,
             created_at=datetime.utcnow()

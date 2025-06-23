@@ -1,5 +1,5 @@
 fastapi
+fastmcp
 uvicorn
-sse-starlette
-psutil
-sqlalchemy 
+sqlmodel
+pydantic 

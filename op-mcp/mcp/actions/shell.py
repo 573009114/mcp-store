@@ -1,49 +1,32 @@
-import asyncio
-import re
+from fastmcp.actions import BaseAction
+import subprocess
+from mcp.cmdb import crud, models
+from datetime import datetime
 
-# 高危命令正则列表
-DANGEROUS_PATTERNS = [
-    r"rm\s+-rf\s+/",           # rm -rf /
-    r":\(\)\{:\|:&\};:",    # fork bomb
-    r"shutdown(\s|$)",         # shutdown
-    r"reboot(\s|$)",           # reboot
-    r"mkfs(\.|\s)",           # mkfs
-    r"dd\s+if=",               # dd if=
-    r"init\s+0",               # init 0
-    r"halt(\s|$)",             # halt
-    r"poweroff(\s|$)",         # poweroff
-    r"chown\s+-R\s+root\s+/", # chown -R root /
-    r"chmod\s+0+\s+/",         # chmod 000 /
-]
+class ShellAction(BaseAction):
+    name = "shell"
+    description = "执行任意shell命令"
 
-def is_dangerous(cmd):
-    for pattern in DANGEROUS_PATTERNS:
-        if re.search(pattern, cmd):
-            return True
-    return False
-
-async def run_shell(params):
-    cmd = params.get("cmd")
-    if not cmd:
-        yield {"error": "No command specified"}
-        return
-    if is_dangerous(cmd):
-        yield {"error": "检测到高危命令，已阻止执行。"}
-        return
-    proc = await asyncio.create_subprocess_shell(
-        cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-    )
-    # 实时读取 stdout
-    if proc.stdout:
-        while True:
-            line = await proc.stdout.readline()
-            if not line:
-                break
-            yield {"stdout": line.decode().rstrip()}
-    # 读取 stderr
-    if proc.stderr:
-        err = await proc.stderr.read()
-        if err:
-            yield {"stderr": err.decode().rstrip()}
-    await proc.wait()
-    yield {"status": "done", "returncode": proc.returncode} 
+    async def handle(self, intent):
+        command = intent.data.get("command")
+        operator = intent.data.get("operator", "system")
+        if not command:
+            return {"error": "No command provided"}
+        try:
+            result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=30)
+            output = {
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+                "returncode": result.returncode
+            }
+        except Exception as e:
+            output = {"error": str(e)}
+        # 记录操作日志
+        log = models.OperationLog(
+            action="shell",
+            detail=f"command: {command}, result: {output}",
+            operator=operator,
+            created_at=datetime.utcnow()
+        )
+        crud.create_operation_log(log)
+        return output 

@@ -1,27 +1,39 @@
-import psutil
-import platform
+from fastmcp.actions import BaseAction
+import subprocess
+from mcp.cmdb import crud, models
+from datetime import datetime
 
-def get_sysinfo():
-    disks = []
-    for part in psutil.disk_partitions():
+class SysInfoAction(BaseAction):
+    name = "sysinfo"
+    description = "系统信息查询"
+
+    async def handle(self, intent):
+        info_type = intent.data.get("type")  # mem/disk/load/net
+        operator = intent.data.get("operator", "system")
+        if info_type == "mem":
+            cmd = "free -h"
+        elif info_type == "disk":
+            cmd = "df -h"
+        elif info_type == "load":
+            cmd = "uptime"
+        elif info_type == "net":
+            cmd = "ifconfig || ip addr"
+        else:
+            return {"error": "type参数必须为mem/disk/load/net"}
         try:
-            usage = psutil.disk_usage(part.mountpoint)
-            disks.append({
-                "device": part.device,
-                "mountpoint": part.mountpoint,
-                "fstype": part.fstype,
-                "total": usage.total,
-                "used": usage.used,
-                "free": usage.free,
-                "percent": usage.percent
-            })
-        except Exception:
-            continue
-    return {
-        "os": platform.platform(),
-        "hostname": platform.node(),
-        "cpu_count": psutil.cpu_count(),
-        "cpu_percent": psutil.cpu_percent(interval=1),
-        "memory": psutil.virtual_memory()._asdict(),
-        "disk": disks
-    } 
+            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)
+            output = {
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+                "returncode": result.returncode
+            }
+        except Exception as e:
+            output = {"error": str(e)}
+        log = models.OperationLog(
+            action="sysinfo",
+            detail=f"cmd: {cmd}, result: {output}",
+            operator=operator,
+            created_at=datetime.utcnow()
+        )
+        crud.create_operation_log(log)
+        return output 
