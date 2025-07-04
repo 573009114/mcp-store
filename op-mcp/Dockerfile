@@ -10,9 +10,9 @@ COPY . .
 RUN set -eux; \
     release=$(grep VERSION_CODENAME /etc/os-release | cut -d= -f2); \
     rm -rf /etc/apt/sources.list.d/*; \
-    echo "deb http://mirrors.aliyun.com/debian $release main contrib non-free\n\
-deb http://mirrors.aliyun.com/debian $release-updates main contrib non-free\n\
-deb http://mirrors.aliyun.com/debian-security $release-security main contrib non-free" > /etc/apt/sources.list; \
+    echo "deb https://mirrors.ustc.edu.cn/debian $release main contrib non-free\n\
+deb https://mirrors.ustc.edu.cn/debian $release-updates main contrib non-free\n\
+deb https://mirrors.ustc.edu.cn/debian-security $release-security main contrib non-free" > /etc/apt/sources.list; \
     apt-get update && apt-get install -y \
     procps \
     iproute2 \
@@ -23,6 +23,7 @@ deb http://mirrors.aliyun.com/debian-security $release-security main contrib non
     psmisc \
     lsof \
     tree \
+    iputils-ping \
     && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 8000
