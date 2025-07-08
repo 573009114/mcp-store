@@ -10,13 +10,16 @@ from mycmcp.cmdb.models import Host, Account
 from mycmcp.cmdb.crud import create_host_with_account as crud_create_host_with_account, get_hosts, get_accounts, get_session
 import paramiko
 from mycmcp.cmdb.database import init_db
+from typing import Optional
 
 # MCP工具化服务器
 mcp = FastMCP("Linux MCP Server")
 
 # shell命令
 @mcp.tool()
-def shell(command: str) -> dict:
+def shell(command: str, host_id: Optional[int] = None) -> dict:
+    if host_id:
+        return remote_exec(host_id, command)
     try:
         result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=30)
         return {
@@ -29,8 +32,10 @@ def shell(command: str) -> dict:
 
 # systemd服务管理
 @mcp.tool()
-def systemd(action: str, service: str) -> dict:
+def systemd(action: str, service: str, host_id: Optional[int] = None) -> dict:
     cmd = f"systemctl {action} {service}"
+    if host_id:
+        return remote_exec(host_id, cmd)
     try:
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=20)
         return {
@@ -43,8 +48,10 @@ def systemd(action: str, service: str) -> dict:
 
 # 日志tail
 @mcp.tool()
-def logs(path: str, lines: int = 50) -> dict:
+def logs(path: str, lines: int = 50, host_id: Optional[int] = None) -> dict:
     cmd = f"tail -n {lines} {path}"
+    if host_id:
+        return remote_exec(host_id, cmd)
     try:
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)
         return {
@@ -57,13 +64,15 @@ def logs(path: str, lines: int = 50) -> dict:
 
 # 进程管理
 @mcp.tool()
-def process(op: str, pid: int = None) -> dict:
+def process(op: str, pid: int = None, host_id: Optional[int] = None) -> dict:
     if op == "list":
         cmd = "ps aux"
     elif op == "kill" and pid:
         cmd = f"kill {pid}"
     else:
         return {"error": "参数错误，op必须为list或kill，kill时需提供pid"}
+    if host_id:
+        return remote_exec(host_id, cmd)
     try:
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)
         return {
@@ -76,7 +85,7 @@ def process(op: str, pid: int = None) -> dict:
 
 # 系统信息
 @mcp.tool()
-def sysinfo(info_type: str) -> dict:
+def sysinfo(info_type: str, host_id: Optional[int] = None) -> dict:
     if info_type == "mem":
         cmd = "free -h"
     elif info_type == "disk":
@@ -87,6 +96,8 @@ def sysinfo(info_type: str) -> dict:
         cmd = "ifconfig || ip addr"
     else:
         return {"error": "type参数必须为mem/disk/load/net"}
+    if host_id:
+        return remote_exec(host_id, cmd)
     try:
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)
         return {
