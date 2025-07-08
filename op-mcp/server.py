@@ -19,7 +19,7 @@ mcp = FastMCP("Linux MCP Server")
 @mcp.tool()
 def shell(command: str, host_id: Optional[int] = None) -> dict:
     if host_id:
-        return remote_exec(host_id, command)
+        return _remote_exec(host_id, command)
     try:
         result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=30)
         return {
@@ -35,7 +35,7 @@ def shell(command: str, host_id: Optional[int] = None) -> dict:
 def systemd(action: str, service: str, host_id: Optional[int] = None) -> dict:
     cmd = f"systemctl {action} {service}"
     if host_id:
-        return remote_exec(host_id, cmd)
+        return _remote_exec(host_id, cmd)
     try:
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=20)
         return {
@@ -51,7 +51,7 @@ def systemd(action: str, service: str, host_id: Optional[int] = None) -> dict:
 def logs(path: str, lines: int = 50, host_id: Optional[int] = None) -> dict:
     cmd = f"tail -n {lines} {path}"
     if host_id:
-        return remote_exec(host_id, cmd)
+        return _remote_exec(host_id, cmd)
     try:
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)
         return {
@@ -72,7 +72,7 @@ def process(op: str, pid: int = None, host_id: Optional[int] = None) -> dict:
     else:
         return {"error": "参数错误，op必须为list或kill，kill时需提供pid"}
     if host_id:
-        return remote_exec(host_id, cmd)
+        return _remote_exec(host_id, cmd)
     try:
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)
         return {
@@ -97,7 +97,7 @@ def sysinfo(info_type: str, host_id: Optional[int] = None) -> dict:
     else:
         return {"error": "type参数必须为mem/disk/load/net"}
     if host_id:
-        return remote_exec(host_id, cmd)
+        return _remote_exec(host_id, cmd)
     try:
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)
         return {
@@ -144,8 +144,7 @@ def create_host_with_account_tool(hostname: str, ip: str, os: str, group: str, u
     h, a = crud_create_host_with_account(host, account)
     return {"msg": "ok", "host_id": h['id'], "account_id": a['id']}
 
-@mcp.tool()
-def remote_exec(host_id: int, command: str) -> dict:
+def _remote_exec(host_id: int, command: str) -> dict:
     hosts = get_hosts()
     accounts = get_accounts()
     host = next((h for h in hosts if h.id == host_id), None)
@@ -163,6 +162,10 @@ def remote_exec(host_id: int, command: str) -> dict:
         return {"stdout": result, "stderr": err}
     except Exception as e:
         return {"error": str(e)}
+
+@mcp.tool()
+def remote_exec(host_id: int, command: str) -> dict:
+    return _remote_exec(host_id, command)
 
 @mcp.tool()
 def fix_account_host_link() -> dict:
