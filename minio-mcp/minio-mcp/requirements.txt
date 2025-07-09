@@ -1,0 +1,4 @@
+fastapi
+uvicorn
+minio
+fastmcp>=0.1.0
