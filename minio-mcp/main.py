@@ -10,6 +10,7 @@ import json
 import logging
 from functools import wraps
 from datetime import datetime
+from io import BytesIO
 
 # 日志配置
 logging.basicConfig(
@@ -128,7 +129,7 @@ def list_files(bucket_name: str, prefix: Optional[str] = None) -> str:
         return "Error: bucket_name 不能为空"
     try:
         objects = minio_client.list_objects(bucket_name, prefix=prefix or "", recursive=True)
-        return "\n".join([obj.object_name for obj in objects])
+        return "\n".join([obj.object_name for obj in objects if obj.object_name is not None])
     except Exception as e:
         return f"Error: {str(e)}"
 
@@ -188,6 +189,30 @@ def minio_resource(bucket: str, object: str) -> str:
 @log_entry
 def minio_prompt(bucket: str, object: str) -> str:
     return f"Please process minio object: {bucket}/{object}"
+
+@mcp.tool()
+@log_entry
+def upload_content(bucket_name: str, object_name: str, content: str, encoding: str = "utf-8") -> str:
+    """
+    直接上传内容到指定 bucket。
+    content: 需要上传的内容（字符串）
+    encoding: 字符串编码，默认utf-8
+    """
+    if not (bucket_name and object_name and content):
+        return "Error: bucket_name/object_name/content 不能为空"
+    try:
+        data = content.encode(encoding)
+        data_stream = BytesIO(data)
+        minio_client.put_object(
+            bucket_name,
+            object_name,
+            data_stream,
+            len(data),
+            content_type="application/octet-stream"
+        )
+        return f"Content uploaded to '{bucket_name}/{object_name}'."
+    except Exception as e:
+        return f"Error: {str(e)}"
 
 # ------------------ SSE 服务挂载 ------------------
 app = Starlette(
