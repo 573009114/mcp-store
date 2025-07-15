@@ -1,5 +1,0 @@
-fastmcp>=2.0.0
-fastapi
-uvicorn==0.35.0
-pydantic==2.11.7
-requests
