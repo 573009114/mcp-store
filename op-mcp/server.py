@@ -58,35 +58,6 @@ from typing import Optional
 # MCP工具化服务器
 mcp = FastMCP("Linux MCP Server")
 
-# shell命令
-@mcp.tool()
-def shell(command: str, host_id: Optional[int] = None) -> dict:
-    """
-    执行Shell命令工具
-    
-    功能描述：
-    在本地或远程主机上执行任意Shell命令，支持本地执行和远程SSH执行。
-    适用于系统管理、文件操作、网络诊断等场景。
-    
-    参数说明：
-    - command (str): 要执行的Shell命令，如 "ls -la", "ps aux", "netstat -tuln" 等
-    - host_id (Optional[int]): 远程主机ID，如果提供则在指定主机上执行，否则在本地执行
-    
-    返回值：
-    - dict: 包含执行结果的字典
-        - stdout (str): 标准输出内容
-        - stderr (str): 标准错误输出内容  
-        - returncode (int): 命令返回码，0表示成功
-        - error (str): 执行出错时的错误信息
-    
-    使用示例：
-    - 本地执行: shell("ls -la")
-    - 远程执行: shell("ps aux", host_id=1)
-    - 网络诊断: shell("ping -c 3 google.com")
-    - 文件操作: shell("cat /etc/hostname")
-    """
-    return {"msg": "该功能已禁用"}
-
 # systemd服务管理
 @mcp.tool()
 def systemd(action: str, service: str, host_id: Optional[int] = None) -> dict:
@@ -134,102 +105,6 @@ def systemd(action: str, service: str, host_id: Optional[int] = None) -> dict:
         }
     except Exception as e:
         return {"error": str(e)}
-
-# 日志tail
-@mcp.tool()
-def logs(path: str, lines: int = 50, host_id: Optional[int] = None) -> dict:
-    """
-    日志查看工具
-    
-    功能描述：
-    查看指定文件的最后几行内容，常用于查看日志文件的最新记录。
-    支持本地和远程文件查看，适用于日志分析和问题排查。
-    
-    参数说明：
-    - path (str): 文件路径，如 "/var/log/nginx/access.log", "/var/log/syslog" 等
-    - lines (int): 显示的行数，默认为50行
-    - host_id (Optional[int]): 远程主机ID，如果提供则查看远程主机上的文件
-    
-    返回值：
-    - dict: 包含文件内容的字典
-        - stdout (str): 文件内容
-        - stderr (str): 错误信息
-        - returncode (int): 返回码
-        - error (str): 执行出错时的错误信息
-    
-    使用示例：
-    - 查看Nginx日志: logs("/var/log/nginx/access.log", 100)
-    - 查看系统日志: logs("/var/log/syslog", 20)
-    - 远程查看: logs("/var/log/mysql/error.log", 30, host_id=1)
-    - 查看应用日志: logs("/app/logs/app.log", 50)
-    """
-    return {"msg": "该功能已禁用"}
-
-# 进程管理
-@mcp.tool()
-def process(op: str, pid: int = None, host_id: Optional[int] = None) -> dict:
-    """
-    进程管理工具
-    
-    功能描述：
-    管理系统进程，包括查看进程列表、终止进程等操作。
-    支持本地和远程进程管理，适用于进程监控和问题处理。
-    
-    参数说明：
-    - op (str): 操作类型
-        - "list": 列出所有进程（类似ps aux命令）
-        - "kill": 终止指定进程
-    - pid (int): 进程ID，仅在op为"kill"时需要提供
-    - host_id (Optional[int]): 远程主机ID，如果提供则在指定主机上执行
-    
-    返回值：
-    - dict: 包含操作结果的字典
-        - stdout (str): 命令输出内容
-        - stderr (str): 错误输出内容
-        - returncode (int): 返回码
-        - error (str): 执行出错时的错误信息
-    
-    使用示例：
-    - 查看进程列表: process("list")
-    - 终止进程: process("kill", pid=1234)
-    - 远程查看: process("list", host_id=1)
-    - 远程终止: process("kill", pid=5678, host_id=1)
-    """
-    return {"msg": "该功能已禁用"}
-
-# 系统信息
-@mcp.tool()
-def sysinfo(info_type: str, host_id: Optional[int] = None) -> dict:
-    """
-    系统信息查询工具
-    
-    功能描述：
-    查询系统各种资源使用情况和状态信息，包括内存、磁盘、负载、网络等。
-    支持本地和远程系统信息查询，适用于系统监控和性能分析。
-    
-    参数说明：
-    - info_type (str): 信息类型
-        - "mem": 内存使用情况（free -h命令）
-        - "disk": 磁盘使用情况（df -h命令）
-        - "load": 系统负载（uptime命令）
-        - "net": 网络接口信息（ifconfig或ip addr命令）
-    - host_id (Optional[int]): 远程主机ID，如果提供则查询远程主机信息
-    
-    返回值：
-    - dict: 包含系统信息的字典
-        - stdout (str): 命令输出内容
-        - stderr (str): 错误输出内容
-        - returncode (int): 返回码
-        - error (str): 执行出错时的错误信息
-    
-    使用示例：
-    - 查看内存: sysinfo("mem")
-    - 查看磁盘: sysinfo("disk")
-    - 查看负载: sysinfo("load")
-    - 查看网络: sysinfo("net")
-    - 远程查询: sysinfo("mem", host_id=1)
-    """
-    return {"msg": "该功能已禁用"}
 
 # 简单CMDB（sqlite实现）
 DB_PATH = os.path.join(os.path.dirname(__file__), 'cmdb.db')
