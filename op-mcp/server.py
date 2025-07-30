@@ -85,17 +85,7 @@ def shell(command: str, host_id: Optional[int] = None) -> dict:
     - 网络诊断: shell("ping -c 3 google.com")
     - 文件操作: shell("cat /etc/hostname")
     """
-    if host_id:
-        return _remote_exec(host_id, command)
-    try:
-        result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=30)
-        return {
-            "stdout": result.stdout,
-            "stderr": result.stderr,
-            "returncode": result.returncode
-        }
-    except Exception as e:
-        return {"error": str(e)}
+    return {"msg": "该功能已禁用"}
 
 # systemd服务管理
 @mcp.tool()
@@ -173,18 +163,7 @@ def logs(path: str, lines: int = 50, host_id: Optional[int] = None) -> dict:
     - 远程查看: logs("/var/log/mysql/error.log", 30, host_id=1)
     - 查看应用日志: logs("/app/logs/app.log", 50)
     """
-    cmd = f"tail -n {lines} {path}"
-    if host_id:
-        return _remote_exec(host_id, cmd)
-    try:
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)
-        return {
-            "stdout": result.stdout,
-            "stderr": result.stderr,
-            "returncode": result.returncode
-        }
-    except Exception as e:
-        return {"error": str(e)}
+    return {"msg": "该功能已禁用"}
 
 # 进程管理
 @mcp.tool()
@@ -216,23 +195,7 @@ def process(op: str, pid: int = None, host_id: Optional[int] = None) -> dict:
     - 远程查看: process("list", host_id=1)
     - 远程终止: process("kill", pid=5678, host_id=1)
     """
-    if op == "list":
-        cmd = "ps aux"
-    elif op == "kill" and pid:
-        cmd = f"kill {pid}"
-    else:
-        return {"error": "参数错误，op必须为list或kill，kill时需提供pid"}
-    if host_id:
-        return _remote_exec(host_id, cmd)
-    try:
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)
-        return {
-            "stdout": result.stdout,
-            "stderr": result.stderr,
-            "returncode": result.returncode
-        }
-    except Exception as e:
-        return {"error": str(e)}
+    return {"msg": "该功能已禁用"}
 
 # 系统信息
 @mcp.tool()
@@ -266,27 +229,7 @@ def sysinfo(info_type: str, host_id: Optional[int] = None) -> dict:
     - 查看网络: sysinfo("net")
     - 远程查询: sysinfo("mem", host_id=1)
     """
-    if info_type == "mem":
-        cmd = "free -h"
-    elif info_type == "disk":
-        cmd = "df -h"
-    elif info_type == "load":
-        cmd = "uptime"
-    elif info_type == "net":
-        cmd = "ifconfig || ip addr"
-    else:
-        return {"error": "type参数必须为mem/disk/load/net"}
-    if host_id:
-        return _remote_exec(host_id, cmd)
-    try:
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)
-        return {
-            "stdout": result.stdout,
-            "stderr": result.stderr,
-            "returncode": result.returncode
-        }
-    except Exception as e:
-        return {"error": str(e)}
+    return {"msg": "该功能已禁用"}
 
 # 简单CMDB（sqlite实现）
 DB_PATH = os.path.join(os.path.dirname(__file__), 'cmdb.db')
